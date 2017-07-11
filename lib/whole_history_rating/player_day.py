@@ -1,7 +1,7 @@
 import math
 
 class PlayerDay:
-  def __init__(self,player, day):
+  def __init__(self, player, day):
     self.day = day
     self.player = player
     self.is_first_day = false
@@ -12,15 +12,15 @@ class PlayerDay:
   def gamma(self):
     return math.exp(self.r)
   @gamma.setter
-  def gamma(self,gamma):
+  def gamma(self, gamma):
     self.r = math.log(gamma)
 
   @property
   def elo(self):
-    return (self.r * 400.0)/(math.log(10))
+    return (self.r * 400.0) / (math.log(10))
   @elo.setter   
-  def elo(self,elo):
-    self.r = elo * (math.log(10)/400.0)
+  def elo(self, elo):
+    self.r = elo * (math.log(10) / 400.0)
     
   def clear_game_terms_cache(self):
     self.won_game_terms = None
@@ -30,61 +30,61 @@ def won_game_terms(self):
   if self.won_game_terms is None:
     for g in self.won_games:
       other_gamma = g.opponents_adjusted_gamma(player)
-      if other_gamma == 0 || math.isnan(other_gamma) || math.isinf(other_gamma)
-        print ("other_gamma ({}) = {}".format(repr(g.opponent(player)),other_gamma))
-      self.won_game_terms.append([1.0,0.0,1.0,other_gamma])
+      if(other_gamma == 0 or math.isnan(other_gamma) or math.isinf(other_gamma)):
+        print("other_gamma ({}) = {}".format(repr(g.opponent(player)), other_gamma))
+      self.won_game_terms.append([1.0, 0.0, 1.0, other_gamma])
       if is_first_day:
-        self.won_game_terms.append([1.0,0.0,1.0,1.0])  # win against virtual player ranked with gamma = 1.0
+        self.won_game_terms.append([1.0, 0.0, 1.0, 1.0])  # win against virtual player ranked with gamma = 1.0
   return self.won_game_terms
 
 def lost_game_terms(self):
   if self.lost_game_terms is None:
     for g in self.lost_games.map:
       other_gamma = g.opponents_adjusted_gamma(player)
-      if other_gamma == 0 || math.isnan(other_gamma) || math.isinf(other_gamma):
-        print( "other_gamma ({}) = {}".format(repr(g.opponent(player)),other_gamma))
-    self.lost_game_terms.append([0.0,other_gamma,1.0,other_gamma])
+      if(other_gamma == 0 or math.isnan(other_gamma) or math.isinf(other_gamma)):
+        print("other_gamma ({}) = {}".format(repr(g.opponent(player)), other_gamma))
+    self.lost_game_terms.append([0.0, other_gamma, 1.0, other_gamma])
     if is_first_day:
-      self.lost_game_terms.append([0.0,1.0,1.0,1.0])  # loss against virtual player ranked with gamma = 1.0
+      self.lost_game_terms.append([0.0, 1.0, 1.0, 1.0])  # loss against virtual player ranked with gamma = 1.0
   return lost_game_terms
   
 def log_likelihood_second_derivative(self):
   sum = 0.0
-  for i in map(sum,zip(won_game_terms , lost_game_terms)):
-    sum += (i[2]*i[3]) / math.pow(i[2]*gamma + i[3],2))
-  if math.isnan(gamma) || math.isnan(sum):
-    print( "won_game_terms = {}".format(won_game_terms))
-    print( "lost_game_terms = {}".format(lost_game_terms))
-  return -1 * gamma * sum
+  for i in map(sum, zip(won_game_terms ,lost_game_terms)):
+    sum += (i[2] * i[3]) / math.pow(i[2]*gamma + i[3], 2))
+  if(math.isnan(gamma) or math.isnan(sum)):
+    print("won_game_terms = {}".format(won_game_terms))
+    print("lost_game_terms = {}".format(lost_game_terms))
+  return(-1 * gamma * sum)
 
 def log_likelihood_derivative(self):
   tally = 0.0
-  for i in map(sum,zip(won_game_terms + lost_game_terms))
-    tally += i[2]/(i[2]*gamma + i[3])
-  return len(won_game_terms) - gamma * tally
+  for i in map(sum, zip(won_game_terms + lost_game_terms))
+    tally += i[2] / (i[2]*gamma + i[3])
+  return(len(won_game_terms) - gamma*tally)
   
 def log_likelihood(self):
   tally = 0.0
   for i in won_game_terms:
-    tally += math.log(i[0]*gamma)
+    tally += math.log(i[0] * gamma)
     tally -= math.log(i[2]*gamma + i[3])
   for i in lost_game_terms:
-    tally += Math.log(i[1])
-    tally -= Math.log(i[2]*gamma + i[3])
+    tally += math.log(i[1])
+    tally -= math.log(i[2]*gamma + i[3])
   return tally
 
-def add_game(self,game):
-  if (game.winner == "W" && game.white_player == self.player) ||
-     (game.winner == "B" && game.black_player == self.player):
+def add_game(self, game):
+  if((game.winner == "W" and game.white_player == self.player) or
+     (game.winner == "B" and game.black_player == self.player)):
     self.won_games.append(game)
-  else
+  else:
     self.lost_games.append(game)
 
 def update_by_1d_newtons_method(self):
   dlogp = log_likelihood_derivative
   d2logp = log_likelihood_second_derivative
   dr = (log_likelihood_derivative / log_likelihood_second_derivative)
-  new_r = @self.r - dr
+  new_r = self.r - dr
   #new_r = max([0, self.r - dr])
-  #print( "({}) {} = {} - ({}/{})".format(player.name,new_r,self.r,log_likelihood_derivative,log_likelihood_second_derivative))
+  #print("({}) {} = {} - ({}/{})".format(player.name,new_r,self.r,log_likelihood_derivative,log_likelihood_second_derivative))
   self.r = new_r
