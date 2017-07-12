@@ -86,5 +86,5 @@ class PlayerDay:
     dr = (log_likelihood_derivative / log_likelihood_second_derivative)
     new_r = self.r - dr
     #new_r = max([0, self.r - dr])
-    #print("({}) {} = {} - ({}/{})".format(player.name,new_r,self.r,log_likelihood_derivative,log_likelihood_second_derivative))
+    #print("({}) {} = {} - ({}/{})".format(player.name, new_r, self.r, log_likelihood_derivative, log_likelihood_second_derivative))
     self.r = new_r
