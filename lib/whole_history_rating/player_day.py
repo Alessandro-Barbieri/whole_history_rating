@@ -50,8 +50,8 @@ class PlayerDay:
   
   def log_likelihood_second_derivative(self):
     sum = 0.0
-    for i in map(sum, zip(won_game_terms ,lost_game_terms)):
-      sum += (i[2]*i[3]) / math.pow(i[2]*gamma + i[3], 2))
+    for a, b, c, d in map(sum, zip(won_game_terms ,lost_game_terms)):
+      sum += (c*d) / math.pow(c*gamma + d, 2))
     if (math.isnan(gamma) or math.isnan(sum)):
       print("won_game_terms = {}".format(won_game_terms))
       print("lost_game_terms = {}".format(lost_game_terms))
@@ -59,18 +59,18 @@ class PlayerDay:
 
   def log_likelihood_derivative(self):
     tally = 0.0
-    for i in map(sum, zip(won_game_terms + lost_game_terms))
-      tally += i[2] / (i[2]*gamma + i[3])
+    for a, b, c, d in map(sum, zip(won_game_terms + lost_game_terms))
+      tally += c / (c*gamma + d)
     return(len(won_game_terms) - gamma*tally)
   
   def log_likelihood(self):
     tally = 0.0
-    for i in won_game_terms:
-      tally += math.log(i[0] * gamma)
-      tally -= math.log(i[2]*gamma + i[3])
+    for a, b, c, d in won_game_terms:
+      tally += math.log(a * gamma)
+      tally -= math.log(c*gamma + d)
     for i in lost_game_terms:
-      tally += math.log(i[1])
-      tally -= math.log(i[2]*gamma + i[3])
+      tally += math.log(b)
+      tally -= math.log(c*gamma + d)
     return tally
 
   def add_game(self, game):
