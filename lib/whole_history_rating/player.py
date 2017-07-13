@@ -2,11 +2,13 @@ import math
 import itertools
 from sys import exit
 from numpy import matrix, empty
+from whole_history_rating import player_day as pd
 
 class Player:
   def __init__(self, name, config):
     self.name = name
-    self.debug = config['debug']
+    if 'debug' in config:
+      self.debug = config['debug']
     self.w2 = math.pow((math.sqrt(config['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
     self.days = []
  
@@ -15,7 +17,7 @@ class Player:
  
   def log_likelihood(self):
     sum = 0.0
-    sigma2 = compute_sigma2
+    sigma2 = compute_sigma2()
     n = len(days)
     for i in range(0, n - 1):
       prior = 0
@@ -26,12 +28,12 @@ class Player:
         rd = days[i].r - days[i - 1].r
         prior += (1/(math.sqrt(2*math.pi*sigma2[i - 1]))) * math.exp(-(math.pow(rd, 2)/2*sigma2[i - 1]))
       if(prior == 0):
-        sum += days[i].log_likelihood
+        sum += days[i].log_likelihood()
       else:
-        if(math.isinf(days[i].log_likelihood) or math.isinf(math.log(prior))):
+        if(math.isinf(days[i].log_likelihood()) or math.isinf(math.log(prior))):
           print("Infinity at {}: {} + {}: prior = {}, days = {}".format(inspect, days[i].log_likelihood, math.log(prior), prior, days.inspect))
           exit()
-        sum += days[i].log_likelihood + math.log(prior)
+        sum += days[i].log_likelihood() + math.log(prior)
     return sum
 
   def hessian(self, days, sigma2):
@@ -45,7 +47,7 @@ class Player:
             prior += -1.0 / sigma2[row]
           if(row > 0):
             prior += -1.0 / sigma2[row - 1] 
-          x = days[row].log_likelihood_second_derivative + prior - 0.001
+          x = days[row].log_likelihood_second_derivative() + prior - 0.001
         elif(row == col-1):
           x[row][col] = 1.0 / sigma2[row]
         elif(row == col+1):
@@ -64,17 +66,17 @@ class Player:
       if(idx > 0):
         prior += -(r[idx] - r[idx - 1])/sigma2[idx - 1]
       if(self.debug):
-        print("g[{}] = {} + {}".format(idx, day.log_likelihood_derivative, prior))
-      g.append(day.log_likelihood_derivative + prior)
+        print("g[{}] = {} + {}".format(idx, day.log_likelihood_derivative(), prior))
+      g.append(day.log_likelihood_derivative() + prior)
     return g
 
   def run_one_newton_iteration(self):
-    for day in days :
-      day.clear_game_terms_cache
+    for day in days:
+      day.clear_game_terms_cache()
     if(len(days) == 1):
-      days[0].update_by_1d_newtons_method
+      days[0].update_by_1d_newtons_method()
     elif(len(days) > 1):
-      update_by_ndim_newton
+      update_by_ndim_newton()
 
   #shameless copied from https://stackoverflow.com/a/12879942
   #https://stackoverflow.com/questions/5878403/python-equivalent-to-rubys-each-cons?rq=1
@@ -200,7 +202,7 @@ class Player:
 
   def update_uncertainty(self):
     if(len(days) > 0):
-      c = covariance
+      c = covariance()
       u = [c[i, i] for i in range(0, len(days) - 1)] # u = variance
       for d, u in zip(days, u):
         d.uncertainty = u
@@ -209,16 +211,16 @@ class Player:
       return 5
 
   def add_game(self, game):
-    if(days.last == None or days.last.day != game.day):
-      new_pday = PlayerDay.new(self, game.day)
-      if(not days):
+    if(not self.days[-1:] or self.days[-1].day != game.day):
+      new_pday = pd.PlayerDay(self, game.day)
+      if(not self.days):
         new_pday.is_first_day = True
         new_pday.gamma = 1
       else:
-        new_pday.gamma = days.last.gamma
-      days.append(new_pday)
+        new_pday.gamma = self.days[-1].gamma
+      self.days.append(new_pday)
     if(game.white_player == self):
-      game.wpd = days.last
+      game.wpd = self.days[-1:]
     else:
-      game.bpd = days.last
-    days.last.add_game(game)
+      game.bpd = self.days[-1:]
+    self.days[-1].add_game(game)

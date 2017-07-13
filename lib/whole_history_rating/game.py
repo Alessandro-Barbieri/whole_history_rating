@@ -1,4 +1,5 @@
 import math
+import types
 
 class Game:
   def __init__(self, black, white, winner, time_step, handicap, extras):
@@ -33,10 +34,10 @@ class Game:
       return white_player
 
   def prediction_score(self):
-    if(white_win_probability == 0.5):
+    if(white_win_probability() == 0.5):
       return 0.5
     else:
-      if((winner == "W" and white_win_probability > 0.5) or (winner == "B" and white_win_probability < 0.5)):
+      if((winner == "W" and white_win_probability() > 0.5) or (winner == "B" and white_win_probability() < 0.5)):
         return 1.0
       else:
         return 0.0

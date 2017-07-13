@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from whole_history_rating import player, game as match
+
 class UnstableRatingException(Exception):
   pass
 
@@ -7,7 +9,8 @@ class Base:
 
   def __init__(self, config = {}):
     self.config = config
-    self.config['w2'] |= 300.0  # elo^2
+    if not 'w2' in self.config:
+      self.config['w2'] = 300.0  # elo^2
     self.games = []
     self.players = {}
 
@@ -21,13 +24,13 @@ class Base:
     score = 0.0
     for p in self.players.values():
       if(not not p.days):
-        score += p.log_likelihood
+        score += p.log_likelihood()
     return score
 
   def player_by_name(self, name):
-    if not players[name]:
-      players[name] = Player.new(name, self.config)
-    return players[name]
+    if not name in self.players:
+      self.players[name] = player.Player(name, self.config)
+    return self.players[name]
   
   def ratings_for_player(name):
     player = player_by_name(name)
@@ -39,14 +42,14 @@ class Base:
       raise "Invalid game (black player == white player)"
       return None
   
-    white_player = player_by_name(white)
-    black_player = player_by_name(black)
-    game = Game.new(black_player, white_player, winner, time_step, handicap, extras)
+    white_player = self.player_by_name(white)
+    black_player = self.player_by_name(black)
+    game = match.Game(black_player, white_player, winner, time_step, handicap, extras)
     return game
   
-  def create_game(black, white, winner, time_step, handicap, extras={}):
-    game = setup_game(black, white, winner, time_step, handicap, extras)
-    return add_game(game)
+  def create_game(self, black, white, winner, time_step, handicap, extras={}):
+    game = self.setup_game(black, white, winner, time_step, handicap, extras)
+    return self.add_game(game)
 
   def add_game(self, game):
     game.white_player.add_game(game)
@@ -58,11 +61,13 @@ class Base:
 
   def iterate(self, count):
     for i in range(count):
-        run_one_iteration
-    for name, player in players:
-      player.update_uncertainty
+        self.run_one_iteration()
+    print(self.players) ###
+    for name, player in self.players:
+      player.update_uncertainty()
     return None
 
   def run_one_iteration(self):
-    for name, player in players:
-      player.run_one_newton_iteration
+    print(self.players) ###
+    for name, player in self.players:
+      player.run_one_newton_iteration()

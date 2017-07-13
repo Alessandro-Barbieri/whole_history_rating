@@ -4,7 +4,7 @@ class PlayerDay:
   def __init__(self, player, day):
     self.day = day
     self.player = player
-    self.is_first_day = false
+    self.is_first_day = False
     self.won_games = []
     self.lost_games = []
 
@@ -50,22 +50,22 @@ class PlayerDay:
   
   def log_likelihood_second_derivative(self):
     sum = 0.0
-    for a, b, c, d in map(sum, zip(won_game_terms ,lost_game_terms)):
+    for a, b, c, d in map(sum, zip(won_game_terms(),lost_game_terms())):
       sum += (c*d) / math.pow(c*gamma + d, 2)
     if(math.isnan(gamma) or math.isnan(sum)):
-      print("won_game_terms = {}".format(won_game_terms))
-      print("lost_game_terms = {}".format(lost_game_terms))
+      print("won_game_terms = {}".format(won_game_terms()))
+      print("lost_game_terms = {}".format(lost_game_terms()))
     return(-1 * gamma * sum)
 
   def log_likelihood_derivative(self):
     tally = 0.0
-    for a, b, c, d in map(sum, zip(won_game_terms + lost_game_terms)):
+    for a, b, c, d in map(sum, zip(won_game_terms() + lost_game_terms())):
       tally += c / (c*gamma + d)
-    return(len(won_game_terms) - gamma*tally)
+    return(len(won_game_terms()) - gamma*tally)
   
   def log_likelihood(self):
     tally = 0.0
-    for a, b, c, d in won_game_terms:
+    for a, b, c, d in won_game_terms():
       tally += math.log(a * gamma)
       tally -= math.log(c*gamma + d)
     for i in lost_game_terms:
@@ -81,10 +81,10 @@ class PlayerDay:
       self.lost_games.append(game)
 
   def update_by_1d_newtons_method(self):
-    dlogp = log_likelihood_derivative
-    d2logp = log_likelihood_second_derivative
-    dr = (log_likelihood_derivative / log_likelihood_second_derivative)
+    dlogp = log_likelihood_derivative()
+    d2logp = log_likelihood_second_derivative()
+    dr = (log_likelihood_derivative() / log_likelihood_second_derivative())
     new_r = self.r - dr
     #new_r = max([0, self.r - dr])
-    #print("({}) {} = {} - ({}/{})".format(player.name, new_r, self.r, log_likelihood_derivative, log_likelihood_second_derivative))
+    #print("({}) {} = {} - ({}/{})".format(player.name, new_r, self.r, log_likelihood_derivative(), log_likelihood_second_derivative()))
     self.r = new_r
