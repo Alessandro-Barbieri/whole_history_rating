@@ -24,7 +24,7 @@ class Player:
         prior += (1/(math.sqrt(2*math.pi*sigma2[i]))) * math.exp(-(math.pow(rd, 2))/2*sigma2[i]) 
       if i > 0:
         rd = days[i].r - days[i - 1].r
-        prior += (1/(math.sqrt(2*math.pi*sigma2[i - 1]))) * math.exp(-(pow(rd, 2)/2*sigma2[i - 1]) 
+        prior += (1/(math.sqrt(2*math.pi*sigma2[i - 1]))) * math.exp(-(math.pow(rd, 2)/2*sigma2[i - 1]) 
       if prior == 0:
         sum += days[i].log_likelihood
       else:
