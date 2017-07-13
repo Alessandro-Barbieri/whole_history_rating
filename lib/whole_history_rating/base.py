@@ -61,6 +61,6 @@ class Base:
       player.update_uncertainty
     return None
 
-  def run_one_iteration(self)
+  def run_one_iteration(self):
     for(name, player in players):
       player.run_one_newton_iteration
