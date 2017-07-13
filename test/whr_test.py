@@ -1,9 +1,11 @@
 import unittest
+import whole_history_rating
 
 class WholeHistoryRatingTest(unittest.TestCase):
   
-  def setup(self)
-    return(self.whr = WholeHistoryRating.Base.new)
+  def setup(self):
+    self.whr = WholeHistoryRating.Base.new
+    return self.whr
 
   def setup_game_with_elo(self, white_elo, black_elo, handicap):
     game = self.whr.create_game("black", "white", "W", 1, handicap)
@@ -51,10 +53,10 @@ class WholeHistoryRatingTest(unittest.TestCase):
     assertListEqual([[1, 92, 71], [2, 94, 71], [3, 95, 71], [4, 96, 72]], self.whr.ratings_for_player("shusai"))
   
   def test_unstable_exception_raised_in_certain_cases(self):
-    for(game in range(1, 10)):
+    for game in range(1, 10):
        self.whr.create_game("anchor", "player", "B", 1, 0)
        self.whr.create_game("anchor", "player", "W", 1, 0)
-    for(game in range(1,10)):
+    for game in range(1,10):
        self.whr.create_game("anchor", "player", "B",180, 600)
        self.whr.create_game("anchor", "player", "W",180, 600)
     with assertRaises(WholeHistoryRating.UnstableRatingException):

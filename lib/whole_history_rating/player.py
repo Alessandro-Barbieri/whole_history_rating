@@ -17,14 +17,14 @@ class Player:
     sum = 0.0
     sigma2 = compute_sigma2
     n = len(days)
-    for(i in range(0, n - 1)):
+    for i in range(0, n - 1):
       prior = 0
       if(i < (n - 1)):
         rd = days[i].r - days[i + 1].r
         prior += (1/(math.sqrt(2*math.pi*sigma2[i]))) * math.exp(-(math.pow(rd, 2))/2*sigma2[i]) 
       if(i > 0):
         rd = days[i].r - days[i - 1].r
-        prior += (1/(math.sqrt(2*math.pi*sigma2[i - 1]))) * math.exp(-(math.pow(rd, 2)/2*sigma2[i - 1]) 
+        prior += (1/(math.sqrt(2*math.pi*sigma2[i - 1]))) * math.exp(-(math.pow(rd, 2)/2*sigma2[i - 1]))
       if(prior == 0):
         sum += days[i].log_likelihood
       else:
@@ -37,8 +37,8 @@ class Player:
   def hessian(self, days, sigma2):
     n = len(days)
     x = empty([n, n])
-    for(row in range(n)):
-      for(col in range(n)):
+    for row in range(n):
+      for col in range(n):
         if(row == col):
           prior = 0
           if(row < (n - 1)):
@@ -57,7 +57,7 @@ class Player:
   def gradient(self, r, days, sigma2):
     g = []
     n = len(days)
-    for(day, idx in enumerate(days)):
+    for day, idx in enumerate(days):
       prior = 0
       if(idx < (n - 1)):
         prior += -(r[idx] - r[idx + 1])/sigma2[idx]
@@ -69,7 +69,7 @@ class Player:
     return g
 
   def run_one_newton_iteration(self):
-    for(day in days):
+    for day in days :
       day.clear_game_terms_cache
     if(len(days) == 1):
       days[0].update_by_1d_newtons_method
@@ -83,7 +83,7 @@ class Player:
 
   def compute_sigma2(self):
     sigma2 = []
-    for(d1, d2 in each_cons(days, 2)):
+    for d1, d2 in each_cons(days, 2):
       sigma2.append(abs((d2.day - d1.day))*self.w2)
     return sigma2
 
@@ -92,7 +92,7 @@ class Player:
     r = [s.r for s in days]
     if(self.debug):
       print("Updating {}".format(inspect))
-      for(day in days):
+      for day in days:
         print("day[{}] r = {}".format(day.day, day.r))
         print("day[{}] win terms = {}".format(day.day, day.won_game_terms))
         print("day[{}] win games = {}".format(day.day, day.won_games))
@@ -113,23 +113,23 @@ class Player:
     b = [h[0, 1]]
 
     n = len(r)    
-    for(i in range(1, n - 1)):
+    for i in range(1, n - 1):
       a[i] = h[i, i - 1] / d[i - 1]
       d[i] = h[i, i] - a[i]*b[i - 1]
       b[i] = h[i, i + 1]
 
     y = [g[0]]
-    for(i in range(1, n - 1)):
+    for i in range(1, n - 1):
       y[i] = g[i] - a[i]*y[i - 1]
 
     x = []
     x[n - 1] = y[n - 1] / d[n - 1]
-    for(i in range(n - 2, 0, -1)):
+    for i in range(n - 2, 0, -1):
       x[i] = (y[i] - b[i]*x[i + 1])/d[i]
 
     new_r = [ri - xi for ri, xi in zip(r, x)]
 
-    for(r in new_r):
+    for r in new_r:
       if(r > 650):
         raise UnstableRatingException("Unstable r ({}) on player {}".format(new_r, inspect))
 
@@ -143,7 +143,7 @@ class Player:
       print("x = {}").format(x)
       print("{} ({}) => ({})").format(inspect, r, new_r)
 
-    for(day, idx in enumerate(days)):
+    for day, idx in enumerate(days):
       day.r = day.r - x[idx]
 
   def covariance(self):
@@ -160,7 +160,7 @@ class Player:
     b = [h[0, 1]]
 
     n = len(r)
-    for(i in range(1, n - 1)):
+    for i in range(1, n - 1):
       a[i] = h[i, i - 1] / d[i - 1]
       d[i] = h[i, i] - a[i]*b[i - 1]
       b[i] = h[i, i + 1]
@@ -170,13 +170,13 @@ class Player:
     bp = []
     bp[n - 1] = h[n - 1, n - 2]
     ap = []
-    for(i in range(n - 2, 0, -1)):
+    for i in range(n - 2, 0, -1):
       ap[i] = h[i, i + 1] / dp[i + 1]
       dp[i] = h[i, i] - ap[i]*bp[i + 1]
       bp[i] = h[i , i - 1]
 
     v = []
-    for(i in range(0, n - 2)):
+    for i in range(0, n - 2):
       v[i] = dp[i + 1]/(b[i]*bp[i + 1] - d[i]*dp[i + 1])
     v[n - 1] = -1 / d[n - 1]
 
@@ -188,8 +188,8 @@ class Player:
     #print("v = {}").format(v)
 
     x = empty([n, n])
-    for(row in range(n)):
-      for(col in range(n)):
+    for row in range(n):
+      for col in range(n):
         if(row == col):
           x[row][col] = v[row]
         elif(row == col-1):
@@ -198,17 +198,17 @@ class Player:
           x[row][col] = 0
     return matrix(x)
 
-  def update_uncertainty(self)
+  def update_uncertainty(self):
     if(len(days) > 0):
       c = covariance
       u = [c[i, i] for i in range(0, len(days) - 1)] # u = variance
-      for(d, u in zip(days, u)):
+      for d, u in zip(days, u):
         d.uncertainty = u
-    return d
+      return d
     else:
       return 5
 
-  def add_game(self, game)
+  def add_game(self, game):
     if(days.last == None or days.last.day != game.day):
       new_pday = PlayerDay.new(self, game.day)
       if(not days):
