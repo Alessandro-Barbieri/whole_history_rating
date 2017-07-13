@@ -9,10 +9,10 @@ class Player:
     self.debug = config['debug']
     self.w2 = math.pow((math.sqrt(config['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
     self.days = []
-  
+ 
   def inspect(self):
     return("{}:({})".format(self, name))
-  
+ 
   def log_likelihood(self):
     sum = 0.0
     sigma2 = compute_sigma2
@@ -29,7 +29,7 @@ class Player:
         sum += days[i].log_likelihood
       else:
         if (math.isinf(days[i].log_likelihood) or math.isinf(math.log(prior))):
-          print("Infinity at {}: {} + {}: prior = {}, days = {}".format(inspect, days[i].log_likelihood, math.log(prior), prior, repr(days)))
+          print("Infinity at {}: {} + {}: prior = {}, days = {}".format(inspect, days[i].log_likelihood, math.log(prior), prior, days.inspect))
           exit()
         sum += days[i].log_likelihood + math.log(prior)
     return sum
@@ -53,7 +53,7 @@ class Player:
         else:
           x[row][col] = 0
     return matrix(x)
- 
+
   def gradient(self, r, days, sigma2):
     g = []
     n = len(days)
@@ -67,7 +67,7 @@ class Player:
         print("g[{}] = {} + {}".format(idx, day.log_likelihood_derivative, prior))
       g.append(day.log_likelihood_derivative + prior)
     return g
-  
+
   def run_one_newton_iteration(self):
     for day in days:
       day.clear_game_terms_cache
@@ -80,7 +80,7 @@ class Player:
   #https://stackoverflow.com/questions/5878403/python-equivalent-to-rubys-each-cons?rq=1
   def each_cons(xs, n):
     return itertools.izip(*(xs[i:] for i in xrange(n)))
-      
+
   def compute_sigma2(self)
     sigma2 = []
     for d1, d2 in each_cons(days, 2)
@@ -101,13 +101,13 @@ class Player:
         print("day[{}] log(p) = {}".format(day.day, day.log_likelihood))
         print("day[{}] dlp = {}".format(day.day, day.log_likelihood_derivative))
         print("day[{}] dlp2 = {}".format(day.day, day.log_likelihood_second_derivative))
-  
+
     # sigma squared (used in the prior)
     sigma2 = compute_sigma2
-  
+
     h = hessian(days, sigma2)
     g = gradient(r, days, sigma2)
-  
+
     a = []
     d = [h[0, 0]]
     b = [h[0, 1]]
@@ -117,11 +117,11 @@ class Player:
       a[i] = h[i, i - 1] / d[i - 1]
       d[i] = h[i, i] - a[i]*b[i - 1]
       b[i] = h[i, i + 1]
-  
+
     y = [g[0]]
     for i in range(1, n - 1):
       y[i] = g[i] - a[i]*y[i - 1]
-  
+
     x = []
     x[n - 1] = y[n - 1] / d[n - 1]
     for i in range(n - 2, 0, -1):
@@ -132,7 +132,7 @@ class Player:
     for r in new_r:
       if r > 650:
         raise UnstableRatingException("Unstable r ({}) on player {}".format(new_r, inspect))
-  
+
     if self.debug:
       print("Hessian = {}").format(h)
       print("gradient = {}").format(g)
@@ -142,29 +142,29 @@ class Player:
       print("y = {}").format(y)
       print("x = {}").format(x)
       print("{} ({}) => ({})").format(inspect, r, new_r)
-  
+
     for day, idx in enumerate(days):
       day.r = day.r - x[idx]
 
   def covariance(self):
     r = [s.r for s in days]
-  
+
     sigma2 = compute_sigma2
     h = hessian(days, sigma2)
     g = gradient(r, days, sigma2)
-  
+
     n = len(days)
-  
+
     a = []
     d = [h[0, 0]]
     b = [h[0, 1]]
-  
+
     n = len(r)
     for i in range(1, n - 1):
       a[i] = h[i, i - 1] / d[i - 1]
       d[i] = h[i, i] - a[i]*b[i - 1]
       b[i] = h[i, i + 1]
-  
+
     dp = []
     dp[n - 1] = h[n - 1, n - 1]    
     bp = []
@@ -174,19 +174,19 @@ class Player:
       ap[i] = h[i, i + 1] / dp[i + 1]
       dp[i] = h[i, i] - ap[i]*bp[i + 1]
       bp[i] = h[i , i - 1]
-    
+
     v = []
     for i in range(0, n - 2):
       v[i] = dp[i + 1]/(b[i]*bp[i + 1] - d[i]*dp[i + 1])
     v[n - 1] = -1 / d[n - 1]
-  
+
     #print("a = {}").format(a)
     #print("b = {}").format(b)
     #print("bp = {}").format(bp)
     #print("d = {}").format(d)
     #print("dp = {}").format(dp)
     #print("v = {}").format(v)
-  
+
     x = empty([n, n])
     for row in range(n):
       for col in range(n):
@@ -197,7 +197,7 @@ class Player:
         else:
           x[row][col] = 0
     return matrix(x)
-  
+
   def update_uncertainty(self)
     if len(days) > 0:
       c = covariance
