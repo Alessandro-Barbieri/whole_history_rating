@@ -162,7 +162,7 @@ class Player:
     n = len(r)
     for i in range(1, n - 1):
       a[i] = h[i, i - 1] / d[i - 1]
-      d[i] = h[i, i] - a[i]*b[i-1]
+      d[i] = h[i, i] - a[i]*b[i - 1]
       b[i] = h[i, i + 1]
   
     dp = []
@@ -178,7 +178,7 @@ class Player:
     v = []
     for i in range(0, n - 2):
       v[i] = dp[i + 1]/(b[i]*bp[i + 1] - d[i]*dp[i + 1])
-    v[n - 1] = -1/d[n - 1]
+    v[n - 1] = -1 / d[n - 1]
   
     #print("a = {}").format(a)
     #print("b = {}").format(b)
