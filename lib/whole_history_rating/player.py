@@ -3,7 +3,7 @@ import itertools
 from sys import exit
 from numpy import matrix, empty
 
-class Player
+class Player:
   def __init__(self, name, config)
     self.name = name
     self.debug = config['debug']
