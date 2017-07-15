@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 from whole_history_rating import player, game as match
 
 class UnstableRatingException(Exception):
@@ -9,7 +8,7 @@ class Base:
 
     def __init__(self, config={}):
         self.config = config
-        if not 'w2' in self.config:
+        if 'w2' not in self.config:
             self.config['w2'] = 300.0  # elo^2
         self.games = []
         self.players = {}
@@ -23,7 +22,7 @@ class Base:
     def log_likelihood(self):
         score = 0.0
         for p in self.players.values():
-            if not not p.days:
+            if p.days:
                 score += p.log_likelihood()
         return score
 
@@ -33,7 +32,7 @@ class Base:
         return self.players[name]
 
     def ratings_for_player(self, name):
-        player = player_by_name(name)
+        player = self.player_by_name(name)
         return [[d.day, int(round(d.elo)), int(round(d.uncertainty * 100))] for d in player.days]
 
     def setup_game(self, black, white, winner, time_step, handicap, extras={}):
@@ -54,8 +53,8 @@ class Base:
     def add_game(self, game):
         game.white_player.add_game(game)
         game.black_player.add_game(game)
-        if game.bpd == None:
-            print("Bad game: {} -> {}".format(options.inspect, game.inspect))
+        if game.bpd is None:
+            print("Bad game: {} -> {}".format(options.inspect(), game.inspect()))
         self.games.append(game)
         return game
 
