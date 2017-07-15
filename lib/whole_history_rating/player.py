@@ -1,5 +1,4 @@
 import math
-import itertools
 from sys import exit
 from numpy import matrix, empty
 from whole_history_rating import player_day as pd
@@ -9,6 +8,8 @@ class Player:
     self.name = name
     if 'debug' in config:
       self.debug = config['debug']
+    else:
+      self.debug = None
     self.w2 = math.pow((math.sqrt(config['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
     self.days = []
  
@@ -17,23 +18,23 @@ class Player:
  
   def log_likelihood(self):
     sum = 0.0
-    sigma2 = compute_sigma2()
-    n = len(days)
+    sigma2 = self.compute_sigma2()
+    n = len(self.days)
     for i in range(0, n - 1):
       prior = 0
       if(i < (n - 1)):
-        rd = days[i].r - days[i + 1].r
+        rd = self.days[i].r - self.days[i + 1].r
         prior += (1/(math.sqrt(2*math.pi*sigma2[i]))) * math.exp(-(math.pow(rd, 2))/2*sigma2[i]) 
       if(i > 0):
-        rd = days[i].r - days[i - 1].r
+        rd = self.days[i].r - self.days[i - 1].r
         prior += (1/(math.sqrt(2*math.pi*sigma2[i - 1]))) * math.exp(-(math.pow(rd, 2)/2*sigma2[i - 1]))
       if(prior == 0):
-        sum += days[i].log_likelihood()
+        sum += self.days[i].log_likelihood()
       else:
-        if(math.isinf(days[i].log_likelihood()) or math.isinf(math.log(prior))):
+        if(math.isinf(self.days[i].log_likelihood()) or math.isinf(math.log(prior))):
           print("Infinity at {}: {} + {}: prior = {}, days = {}".format(inspect, days[i].log_likelihood, math.log(prior), prior, days.inspect))
           exit()
-        sum += days[i].log_likelihood() + math.log(prior)
+        sum += self.days[i].log_likelihood() + math.log(prior)
     return sum
 
   def hessian(self, days, sigma2):
@@ -71,44 +72,44 @@ class Player:
     return g
 
   def run_one_newton_iteration(self):
-    for day in days:
+    for day in self.days:
       day.clear_game_terms_cache()
-    if(len(days) == 1):
-      days[0].update_by_1d_newtons_method()
-    elif(len(days) > 1):
-      update_by_ndim_newton()
+    if(len(self.days) == 1):
+      self.days[0].update_by_1d_newtons_method()
+    elif(len(self.days) > 1):
+      self.update_by_ndim_newton()
 
   #shameless copied from https://stackoverflow.com/a/12879942
   #https://stackoverflow.com/questions/5878403/python-equivalent-to-rubys-each-cons?rq=1
-  def each_cons(xs, n):
-    return itertools.izip(*(xs[i:] for i in xrange(n)))
+  def each_cons(self, xs, n):
+    return zip(*(xs[i:] for i in range(n)))
 
   def compute_sigma2(self):
     sigma2 = []
-    for d1, d2 in each_cons(days, 2):
+    for d1, d2 in self.each_cons(self.days, 2):
       sigma2.append(abs((d2.day - d1.day))*self.w2)
     return sigma2
 
   def update_by_ndim_newton(self):
     # r
-    r = [s.r for s in days]
+    r = [s.r for s in self.days]
     if(self.debug):
-      print("Updating {}".format(inspect))
-      for day in days:
+      print("Updating {}".format(self.inspect))
+      for day in self.days:
         print("day[{}] r = {}".format(day.day, day.r))
-        print("day[{}] win terms = {}".format(day.day, day.won_game_terms))
+        print("day[{}] win terms = {}".format(day.day, day.won_game_terms()))
         print("day[{}] win games = {}".format(day.day, day.won_games))
-        print("day[{}] lose terms = {}".format(day.day, day.lost_game_terms))
+        print("day[{}] lose terms = {}".format(day.day, day.lost_game_terms()))
         print("day[{}] lost games = {}".format(day.day, day.lost_games))
-        print("day[{}] log(p) = {}".format(day.day, day.log_likelihood))
-        print("day[{}] dlp = {}".format(day.day, day.log_likelihood_derivative))
-        print("day[{}] dlp2 = {}".format(day.day, day.log_likelihood_second_derivative))
+        print("day[{}] log(p) = {}".format(day.day, day.log_likelihood()))
+        print("day[{}] dlp = {}".format(day.day, day.log_likelihood_derivative()))
+        print("day[{}] dlp2 = {}".format(day.day, day.log_likelihood_second_derivative()))
 
     # sigma squared (used in the prior)
-    sigma2 = compute_sigma2
+    sigma2 = self.compute_sigma2()
 
-    h = hessian(days, sigma2)
-    g = gradient(r, days, sigma2)
+    h = self.hessian(self.days, sigma2)
+    g = gradient(r, self.days, sigma2)
 
     a = []
     d = [h[0, 0]]
@@ -133,7 +134,7 @@ class Player:
 
     for r in new_r:
       if(r > 650):
-        raise UnstableRatingException("Unstable r ({}) on player {}".format(new_r, inspect))
+        raise UnstableRatingException("Unstable r ({}) on player {}".format(new_r, self.inspect()))
 
     if(self.debug):
       print("Hessian = {}").format(h)
@@ -143,19 +144,19 @@ class Player:
       print("b = {}").format(b)
       print("y = {}").format(y)
       print("x = {}").format(x)
-      print("{} ({}) => ({})").format(inspect, r, new_r)
+      print("{} ({}) => ({})").format(self.inspect(), r, new_r)
 
-    for day, idx in enumerate(days):
+    for day, idx in enumerate(self.days):
       day.r = day.r - x[idx]
 
   def covariance(self):
-    r = [s.r for s in days]
+    r = [s.r for s in self.days]
 
-    sigma2 = compute_sigma2
-    h = hessian(days, sigma2)
-    g = gradient(r, days, sigma2)
+    sigma2 = self.compute_sigma2()
+    h = self.hessian(self.days, sigma2)
+    g = self.gradient(r, self.days, sigma2)
 
-    n = len(days)
+    n = len(self.days)
 
     a = []
     d = [h[0, 0]]
@@ -201,10 +202,10 @@ class Player:
     return matrix(x)
 
   def update_uncertainty(self):
-    if(len(days) > 0):
-      c = covariance()
-      u = [c[i, i] for i in range(0, len(days) - 1)] # u = variance
-      for d, u in zip(days, u):
+    if(len(self.days) > 0):
+      c = self.covariance()
+      u = [c[i, i] for i in range(0, len(self.days) - 1)] # u = variance
+      for d, u in zip(self.days, u):
         d.uncertainty = u
       return d
     else:
@@ -220,7 +221,7 @@ class Player:
         new_pday.gamma = self.days[-1].gamma
       self.days.append(new_pday)
     if(game.white_player == self):
-      game.wpd = self.days[-1:]
+      game.wpd = self.days[-1]
     else:
-      game.bpd = self.days[-1:]
+      game.bpd = self.days[-1]
     self.days[-1].add_game(game)

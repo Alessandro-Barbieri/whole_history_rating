@@ -7,6 +7,8 @@ class PlayerDay:
     self.is_first_day = False
     self.won_games = []
     self.lost_games = []
+    self.won_game_terms_var = None
+    self.lost_game_terms_var = None
 
   @property
   def gamma(self):
@@ -23,38 +25,40 @@ class PlayerDay:
     self.r = elo * (math.log(10)/400.0)
     
   def clear_game_terms_cache(self):
-    self.won_game_terms = None
-    self.lost_game_terms = None
+    self.won_game_terms_var = None
+    self.lost_game_terms_var = None
   
   def won_game_terms(self):
-    if(self.won_game_terms is None):
+    if(self.won_game_terms_var is None):
+      self.won_game_terms_var = []
       for g in self.won_games:
-        other_gamma = g.opponents_adjusted_gamma(player)
+        other_gamma = g.opponents_adjusted_gamma(self.player)
         if(other_gamma == 0 or math.isnan(other_gamma) or math.isinf(other_gamma)):
-          print("other_gamma ({}) = {}".format(g.opponent(player).inspect, other_gamma))
-        self.won_game_terms.append([1.0, 0.0, 1.0, other_gamma])
+          print("other_gamma ({}) = {}".format(g.opponent(self.player).inspect, other_gamma))
+        self.won_game_terms_var.append([1.0, 0.0, 1.0, other_gamma])
         if(is_first_day):
-          self.won_game_terms.append([1.0, 0.0, 1.0, 1.0])  # win against virtual player ranked with gamma = 1.0
-    return self.won_game_terms
+          self.won_game_terms_var.append([1.0, 0.0, 1.0, 1.0])  # win against virtual player ranked with gamma = 1.0
+    return self.won_game_terms_var
 
   def lost_game_terms(self):
-    if(self.lost_game_terms is None):
+    if(self.lost_game_terms_var is None):
+      self.lost_game_terms_var = []
       for g in self.lost_games:
-        other_gamma = g.opponents_adjusted_gamma(player)
+        other_gamma = g.opponents_adjusted_gamma(self.player)
         if(other_gamma == 0 or math.isnan(other_gamma) or math.isinf(other_gamma)):
-          print("other_gamma ({}) = {}".format(g.opponent(player).inspect, other_gamma))
-      self.lost_game_terms.append([0.0, other_gamma, 1.0, other_gamma])
+          print("other_gamma ({}) = {}".format(g.opponent(self.player).inspect, other_gamma))
+      self.lost_game_terms_var.append([0.0, other_gamma, 1.0, other_gamma])
       if(is_first_day):
-        self.lost_game_terms.append([0.0, 1.0, 1.0, 1.0])  # loss against virtual player ranked with gamma = 1.0
-    return lost_game_terms
-  
+        self.lost_game_terms_var.append([0.0, 1.0, 1.0, 1.0])  # loss against virtual player ranked with gamma = 1.0
+    return self.lost_game_terms_var
+
   def log_likelihood_second_derivative(self):
     sum = 0.0
-    for a, b, c, d in map(sum, zip(won_game_terms(),lost_game_terms())):
+    for a, b, c, d in map(sum, zip(self.won_game_terms(), self.lost_game_terms())):
       sum += (c*d) / math.pow(c*gamma + d, 2)
     if(math.isnan(gamma) or math.isnan(sum)):
-      print("won_game_terms = {}".format(won_game_terms()))
-      print("lost_game_terms = {}".format(lost_game_terms()))
+      print("won_game_terms = {}".format(self.won_game_terms()))
+      print("lost_game_terms = {}".format(self.lost_game_terms()))
     return(-1 * gamma * sum)
 
   def log_likelihood_derivative(self):

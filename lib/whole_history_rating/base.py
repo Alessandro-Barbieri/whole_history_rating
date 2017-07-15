@@ -62,12 +62,10 @@ class Base:
   def iterate(self, count):
     for i in range(count):
         self.run_one_iteration()
-    print(self.players) ###
     for name, player in self.players:
       player.update_uncertainty()
     return None
 
   def run_one_iteration(self):
-    print(self.players) ###
-    for name, player in self.players:
+    for name, player in self.players.items():
       player.run_one_newton_iteration()
