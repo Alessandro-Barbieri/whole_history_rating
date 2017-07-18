@@ -1,0 +1,10 @@
+{
+  "version": "0.2.1",
+  "tasks": [
+    {
+      "taskName": "attività-whole_history_rating",
+      "appliesTo": "lib/whole_history_rating/",
+      "type": "command"
+    }
+  ]
+}

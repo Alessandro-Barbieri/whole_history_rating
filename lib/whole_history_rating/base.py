@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
-from whole_history_rating import player, game as match
-
-class UnstableRatingException(Exception):
-    pass
+from whole_history_rating import player as pl
+from whole_history_rating import game as match
 
 class Base:
 
-    def __init__(self, config={}):
-        self.config = config
-        if 'w2' not in self.config:
-            self.config['w2'] = 300.0  # elo^2
+    def __init__(self, **kwargs):
+        kwargs.setdefault('w2', 300.0) # elo^2
+        self.kwargs = kwargs
         self.games = []
         self.players = {}
 
@@ -28,7 +25,7 @@ class Base:
 
     def player_by_name(self, name):
         if not name in self.players:
-            self.players[name] = player.Player(name, self.config)
+            self.players[name] = pl.Player(name, self.kwargs)
         return self.players[name]
 
     def ratings_for_player(self, name):
@@ -54,7 +51,7 @@ class Base:
         game.white_player.add_game(game)
         game.black_player.add_game(game)
         if game.bpd is None:
-            print("Bad game: {} -> {}".format(options.inspect(), game.inspect()))
+            print("Bad game: {} -> {}".format(repr(self.kwargs), game.inspect()))
         self.games.append(game)
         return game
 

@@ -1,5 +1,7 @@
 import math
 import types
+from whole_history_rating import player as pl
+from whole_history_rating import player_day as pd
 
 class Game:
     def __init__(self, black, white, winner, time_step, handicap, extras):
@@ -7,6 +9,9 @@ class Game:
         self.white_player = white
         self.black_player = black
         self.winner = winner
+        self.bpd = None
+        self.wpd = None
+        self.winner = None
         self.extras = extras
         self.handicap = handicap or 0
         self.handicap_proc = (handicap if
@@ -22,14 +27,14 @@ class Game:
         #print("black_advantage = {}".format(black_advantage))
 
         if player == self.white_player:
-            opponent_elo = bpd.elo + black_advantage
+            opponent_elo = self.bpd.elo + black_advantage
         elif player == self.black_player:
-            opponent_elo = wpd.elo - black_advantage
+            opponent_elo = self.wpd.elo - black_advantage
         else:
             raise "No opponent for {}, since they're not in this game: {}.".format(player.inspect(), self.inspect())
         rval = math.pow(10, (opponent_elo / 400.0))
         if rval == 0 or math.isinf(rval) or math.isnan(rval):
-            raise UnstableRatingException("bad adjusted gamma: {}".format(self.inspect()))
+            raise pl.UnstableRatingException("bad adjusted gamma: {}".format(self.inspect()))
 
         return rval
 
@@ -53,9 +58,9 @@ class Game:
         return("{}: W:{}(r={}) B:{}(r={}) winner = {}, komi = {}, handicap = {}".format(
             self,
             self.white_player.name,
-            wpd.r if wpd else '?',
+            self.wpd.r if self.wpd else '?',
             self.black_player.name,
-            bpd.r if bpd else '?',
+            self.bpd.r if self.bpd else '?',
             self.winner,
             self.komi,
             self.handicap))
@@ -67,7 +72,7 @@ class Game:
 
     #This is the Bradley-Terry Model
     def white_win_probability(self):
-        return wpd.gamma / (wpd.gamma + self.opponents_adjusted_gamma(self.white_player))
+        return self.wpd.gamma / (self.wpd.gamma + self.opponents_adjusted_gamma(self.white_player))
 
     def black_win_probability(self):
-        return bpd.gamma / (bpd.gamma + self.opponents_adjusted_gamma(self.black_player))
+        return self.bpd.gamma / (self.bpd.gamma + self.opponents_adjusted_gamma(self.black_player))

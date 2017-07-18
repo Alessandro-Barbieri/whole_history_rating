@@ -3,6 +3,7 @@ import math
 class PlayerDay:
     def __init__(self, player, day):
         self.day = day
+        self.name = None
         self.player = player
         self.is_first_day = False
         self.won_games = []
@@ -10,6 +11,7 @@ class PlayerDay:
         self.won_game_terms_var = None
         self.lost_game_terms_var = None
         self.r = None
+        self.uncertainty = None
 
     @property
     def gamma(self):
@@ -73,7 +75,7 @@ class PlayerDay:
         for a, b, c, d in self.won_game_terms():
             tally += math.log(a * self.gamma)
             tally -= math.log(c*self.gamma + d)
-        for i in self.lost_game_terms():
+        for a, b, c, d in self.lost_game_terms():
             tally += math.log(b)
             tally -= math.log(c*self.gamma + d)
         return tally
@@ -92,9 +94,9 @@ class PlayerDay:
         new_r = self.r - dr
         #new_r = max([0, self.r - dr])
         #print("({}) {} = {} - ({}/{})".format(
-        #player.name,
-        #new_r,
-        #self.r,
-        #self.log_likelihood_derivative(),
-        #self.log_likelihood_second_derivative()))
+        #                                       player.name,
+        #                                       new_r,
+        #                                       self.r,
+        #                                       self.log_likelihood_derivative(),
+        #                                       self.log_likelihood_second_derivative()))
         self.r = new_r

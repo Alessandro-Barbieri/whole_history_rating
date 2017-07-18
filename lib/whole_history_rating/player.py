@@ -3,15 +3,16 @@ import sys
 from numpy import matrix, empty
 from whole_history_rating import player_day as pd
 
+class UnstableRatingException(Exception):
+    pass
+
 class Player:
-    def __init__(self, name, config):
+    def __init__(self, name, **kwargs):
         self.name = name
-        if 'debug' in config:
-            self.debug = config['debug']
-        else:
-            self.debug = None
-        self.w2 = math.pow((math.sqrt(config['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
+        self.debug = kwargs.get['debug', 'None']
+        self.w2 = math.pow((math.sqrt(kwargs.get['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
         self.days = []
+        self.id = None
 
     def inspect(self):
         return "{}:({})".format(self, self.name)
@@ -32,7 +33,11 @@ class Player:
                 mysum += self.days[i].log_likelihood()
             else:
                 if math.isinf(self.days[i].log_likelihood()) or math.isinf(math.log(prior)):
-                    print("Infinity at {}: {} + {}: prior = {}, days = {}".format(self.inspect(), self.days[i].log_likelihood, math.log(prior), prior, repr(self.days)))
+                    print("Infinity at {}: {} + {}: prior = {}, days = {}".format(self.inspect(),
+                                                                                  self.days[i].log_likelihood,
+                                                                                  math.log(prior),
+                                                                                  prior,
+                                                                                  repr(self.days)))
                     sys.exit()
             mysum += self.days[i].log_likelihood() + math.log(prior)
         return mysum
@@ -207,7 +212,6 @@ class Player:
             u = [c[i, i] for i in range(0, len(self.days) - 1)] # u = variance
             for d, u in zip(self.days, u):
                 d.uncertainty = u
-            return d
         else:
             return 5
 
