@@ -11,7 +11,7 @@ class Game:
         self.winner = winner
         self.bpd = None
         self.wpd = None
-        self.winner = None
+        self.komi = None
         self.extras = extras
         self.handicap = handicap or 0
         self.handicap_proc = (handicap if
@@ -35,7 +35,6 @@ class Game:
         rval = math.pow(10, (opponent_elo / 400.0))
         if rval == 0 or math.isinf(rval) or math.isnan(rval):
             raise pl.UnstableRatingException("bad adjusted gamma: {}".format(self.inspect()))
-
         return rval
 
     def opponent(self, player):

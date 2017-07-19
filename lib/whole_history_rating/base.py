@@ -6,7 +6,7 @@ class Base:
 
     def __init__(self, **kwargs):
         kwargs.setdefault('w2', 300.0) # elo^2
-        self.kwargs = kwargs
+        self.options = kwargs
         self.games = []
         self.players = {}
 
@@ -25,7 +25,7 @@ class Base:
 
     def player_by_name(self, name):
         if not name in self.players:
-            self.players[name] = pl.Player(name, self.kwargs)
+            self.players[name] = pl.Player(name, self.options)
         return self.players[name]
 
     def ratings_for_player(self, name):

@@ -7,10 +7,14 @@ class UnstableRatingException(Exception):
     pass
 
 class Player:
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, options):
         self.name = name
-        self.debug = kwargs.get['debug', 'None']
-        self.w2 = math.pow((math.sqrt(kwargs.get['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
+        self.options = options
+        if 'debug' in options:
+            self.debug = options['debug']
+        else:
+            self.debug = None
+        self.w2 = math.pow((math.sqrt(self.options['w2']) * math.log(10) / 400), 2)  # Convert from elo^2 to r^2
         self.days = []
         self.id = None
 
@@ -42,6 +46,7 @@ class Player:
             mysum += self.days[i].log_likelihood() + math.log(prior)
         return mysum
 
+    @staticmethod
     def hessian(days, sigma2):
         n = len(days)
         x = empty([n, n])
@@ -49,11 +54,11 @@ class Player:
             for col in range(n):
                 if row == col:
                     prior = 0
-                if row < (n - 1):
-                    prior += -1.0 / sigma2[row]
-                if row > 0:
-                    prior += -1.0 / sigma2[row - 1]
-                    x = days[row].log_likelihood_second_derivative() + prior - 0.001
+                    if row < (n - 1):
+                        prior += -1.0 / sigma2[row]
+                    if row > 0:
+                        prior += -1.0 / sigma2[row - 1]
+                    x[row][col] = days[row].log_likelihood_second_derivative() + prior - 0.001
                 elif row == col-1:
                     x[row][col] = 1.0 / sigma2[row]
                 elif row == col+1:
@@ -65,7 +70,7 @@ class Player:
     def gradient(self, r, days, sigma2):
         g = []
         n = len(days)
-        for day, idx in enumerate(days):
+        for idx, day in enumerate(days):
             prior = 0
             if idx < (n - 1):
                 prior += -(r[idx] - r[idx + 1])/sigma2[idx]
@@ -86,13 +91,14 @@ class Player:
 
     #shameless copied from https://stackoverflow.com/a/12879942
     #https://stackoverflow.com/questions/5878403/python-equivalent-to-rubys-each-cons?rq=1
+    @staticmethod
     def each_cons(xs, n):
         return zip(*(xs[i:] for i in range(n)))
 
     def compute_sigma2(self):
         sigma2 = []
         for d1, d2 in self.each_cons(self.days, 2):
-            sigma2.append(abs((d2.day - d1.day))*self.w2)
+            sigma2.append(abs(d2.day - d1.day)*self.w2)
         return sigma2
 
     def update_by_ndim_newton(self):
@@ -116,21 +122,27 @@ class Player:
         h = self.hessian(self.days, sigma2)
         g = self.gradient(r, self.days, sigma2)
 
-        a = []
-        d = [h[0, 0]]
-        b = [h[0, 1]]
-
         n = len(r)
+
+        print(n)
+        
+        a = empty([n])
+        d = empty([n])
+        b = empty([n])
+        d[0] = h[0, 0]
+        b[0] = h[0, 1]
+
         for i in range(1, n - 1):
             a[i] = h[i, i - 1] / d[i - 1]
-            d[i] = h[i, i] - a[i]*b[i - 1]
-            b[i] = h[i, i + 1]
+            d[i] = (h[i, i] - a[i]*b[i - 1])
+            b[i] = (h[i, i + 1])
 
-        y = [g[0]]
+        y = empty([n])
+        y[0] = g[0]
         for i in range(1, n - 1):
-            y[i] = g[i] - a[i]*y[i - 1]
+            y[i] = (g[i] - a[i]*y[i - 1])
 
-        x = []
+        x = empty([n])
         x[n - 1] = y[n - 1] / d[n - 1]
         for i in range(n - 2, 0, -1):
             x[i] = (y[i] - b[i]*x[i + 1])/d[i]
@@ -151,7 +163,7 @@ class Player:
             print("x = {}").format(x)
             print("{} ({}) => ({})").format(self.inspect(), r, new_r)
 
-        for day, idx in enumerate(self.days):
+        for idx, day in enumerate(self.days):
             day.r = day.r - x[idx]
 
     def covariance(self):
@@ -163,27 +175,30 @@ class Player:
 
         n = len(self.days)
 
-        a = []
-        d = [h[0, 0]]
-        b = [h[0, 1]]
-
         n = len(r)
+
+        a = empty([n])
+        d = empty([n])
+        b = empty([n])
+        d[0] = h[0, 0]
+        b[0] = h[0, 1]
+
         for i in range(1, n - 1):
             a[i] = h[i, i - 1] / d[i - 1]
             d[i] = h[i, i] - a[i]*b[i - 1]
             b[i] = h[i, i + 1]
 
-        dp = []
+        dp = empty([n])
         dp[n - 1] = h[n - 1, n - 1]
-        bp = []
+        bp = empty([n])
         bp[n - 1] = h[n - 1, n - 2]
-        ap = []
+        ap = empty([n])
         for i in range(n - 2, 0, -1):
             ap[i] = h[i, i + 1] / dp[i + 1]
             dp[i] = h[i, i] - ap[i]*bp[i + 1]
             bp[i] = h[i, i - 1]
 
-        v = []
+        v = empty([n])
         for i in range(0, n - 2):
             v[i] = dp[i + 1]/(b[i]*bp[i + 1] - d[i]*dp[i + 1])
         v[n - 1] = -1 / d[n - 1]
@@ -218,12 +233,12 @@ class Player:
     def add_game(self, game):
         if not self.days[-1:] or self.days[-1].day != game.day:
             new_pday = pd.PlayerDay(self, game.day)
-        if not self.days:
-            new_pday.is_first_day = True
-            new_pday.gamma = 1
-        else:
-            new_pday.gamma = self.days[-1].gamma
-        self.days.append(new_pday)
+            if not self.days:
+                new_pday.is_first_day = True
+                new_pday.gamma = 1
+            else:
+                new_pday.gamma = self.days[-1].gamma
+            self.days.append(new_pday)
         if game.white_player == self:
             game.wpd = self.days[-1]
         else:

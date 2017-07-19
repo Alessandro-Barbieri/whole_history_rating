@@ -1,4 +1,6 @@
 import math
+from itertools import zip_longest
+import operator
 
 class PlayerDay:
     def __init__(self, player, day):
@@ -37,10 +39,10 @@ class PlayerDay:
             for g in self.won_games:
                 other_gamma = g.opponents_adjusted_gamma(self.player)
                 if other_gamma == 0 or math.isnan(other_gamma) or math.isinf(other_gamma):
-                    print("other_gamma ({}) = {}".format(g.opponent(self.player).inspect, other_gamma))
+                    print("other_gamma ({}) = {}".format(g.opponent(self.player).inspect(), other_gamma))
                 self.won_game_terms_var.append([1.0, 0.0, 1.0, other_gamma])
-                if self.is_first_day:
-                    self.won_game_terms_var.append([1.0, 0.0, 1.0, 1.0])  # win against virtual player ranked with gamma = 1.0
+            if self.is_first_day:
+                self.won_game_terms_var.append([1.0, 0.0, 1.0, 1.0])  # win against virtual player ranked with gamma = 1.0
         return self.won_game_terms_var
 
     def lost_game_terms(self):
@@ -49,15 +51,18 @@ class PlayerDay:
             for g in self.lost_games:
                 other_gamma = g.opponents_adjusted_gamma(self.player)
                 if other_gamma == 0 or math.isnan(other_gamma) or math.isinf(other_gamma):
-                    print("other_gamma ({}) = {}".format(g.opponent(self.player).inspect, other_gamma))
-            self.lost_game_terms_var.append([0.0, other_gamma, 1.0, other_gamma])
+                    print("other_gamma ({}) = {}".format(g.opponent(self.player).inspect(), other_gamma))
+                self.lost_game_terms_var.append([0.0, other_gamma, 1.0, other_gamma])
             if self.is_first_day:
                 self.lost_game_terms_var.append([0.0, 1.0, 1.0, 1.0])  # loss against virtual player ranked with gamma = 1.0
         return self.lost_game_terms_var
 
     def log_likelihood_second_derivative(self):
         mysum = 0.0
-        for a, b, c, d in map(mysum, zip(self.won_game_terms(), self.lost_game_terms())):
+        w = self.won_game_terms()
+        l = self.lost_game_terms()
+        for l1, l2 in zip_longest(w, l, fillvalue=[]):
+            [a, b, c, d] = list(map(sum, zip_longest(l1, l2, fillvalue=0)))
             mysum += (c*d) / math.pow(c*self.gamma + d, 2)
         if math.isnan(self.gamma) or math.isnan(mysum):
             print("won_game_terms = {}".format(self.won_game_terms()))
@@ -66,7 +71,10 @@ class PlayerDay:
 
     def log_likelihood_derivative(self):
         tally = 0.0
-        for a, b, c, d in map(sum, zip(self.won_game_terms() + self.lost_game_terms())):
+        w = self.won_game_terms()
+        l = self.lost_game_terms()
+        for l1, l2 in zip_longest(w, l, fillvalue=[]):
+            [a, b, c, d] = list(map(sum, zip_longest(l1, l2, fillvalue=0)))
             tally += c / (c*self.gamma + d)
         return len(self.won_game_terms()) - self.gamma*tally
 
